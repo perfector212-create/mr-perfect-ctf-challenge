@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mr. Perfect Logistics — Staff Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#17233d; --paper:#f6f4ee; --ink:#1c1c1a; --steel:#3d6b99;
+  --amber:#c7862f; --line:#d8d3c6; --danger:#8c2f2f; --ok:#2f6b4f;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.5}
+header{background:var(--navy);color:#fff;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{font-family:'Source Serif 4',serif;font-size:1.3rem;margin:0;font-weight:700}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav button{background:none;border:1px solid rgba(255,255,255,.25);color:#e7e4db;padding:7px 14px;cursor:pointer;font-family:'Inter',sans-serif;font-size:.85rem;border-radius:3px}
+nav button.active{background:var(--steel);border-color:var(--steel);color:#fff}
+main{max-width:720px;margin:0 auto;padding:30px 20px 100px}
+h2{font-family:'Source Serif 4',serif;border-bottom:2px solid var(--steel);padding-bottom:8px;font-size:1.4rem}
+.panel{display:none}
+.panel.active{display:block}
+label{display:block;margin:14px 0 4px;font-size:.9rem;color:#444}
+input,textarea{width:100%;padding:9px 10px;border:1px solid var(--line);background:#fff;font-family:'Inter',sans-serif;font-size:.95rem;border-radius:2px}
+textarea{min-height:70px;resize:vertical}
+button.primary{margin-top:16px;background:var(--steel);color:#fff;border:none;padding:10px 20px;cursor:pointer;font-size:.9rem;border-radius:3px}
+button.primary:hover{background:#2f5479}
+.msg{margin-top:14px;padding:10px 12px;border-left:4px solid var(--line);font-size:.9rem;white-space:pre-wrap}
+.msg.ok{border-color:var(--ok);background:#eaf3ee}
+.msg.err{border-color:var(--danger);background:#f6eaea}
+.flagline{font-weight:600;color:var(--ok)}
+.comment{border:1px solid var(--line);padding:10px 12px;margin-top:10px;background:#fff;font-size:.9rem}
+.comment b{color:var(--steel)}
+.directory a{color:var(--steel);text-decoration:none;font-size:.9rem}
+.directory li{margin:6px 0}
+.hint{color:#777;font-size:.8rem;margin-top:4px}
+#tipsBtn{position:fixed;bottom:18px;right:18px;background:var(--amber);color:#fff;border:none;padding:11px 16px;border-radius:30px;cursor:pointer;font-weight:600;font-size:.85rem;box-shadow:0 2px 8px rgba(0,0,0,.25);z-index:40}
+#tipsDrawer{position:fixed;top:0;right:-360px;width:340px;max-width:90vw;height:100%;background:#fff;box-shadow:-4px 0 18px rgba(0,0,0,.2);transition:right .25s ease;z-index:50;overflow-y:auto;padding:20px}
+#tipsDrawer.open{right:0}
+#tipsDrawer h3{font-family:'Source Serif 4',serif;margin-top:0}
+#tipsDrawer code{background:#f1efe7;padding:2px 5px;border-radius:2px;font-size:.82rem}
+#tipsDrawer details{margin-bottom:12px;border:1px solid var(--line);padding:8px 10px;border-radius:3px}
+#tipsDrawer summary{cursor:pointer;font-weight:600}
+#closeTips{float:right;background:none;border:none;font-size:1.1rem;cursor:pointer}
+.progress{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}
+.chip{border:1px solid var(--line);padding:5px 10px;border-radius:14px;font-size:.78rem;background:#fff}
+.chip.done{background:var(--ok);color:#fff;border-color:var(--ok)}
+footer{text-align:center;color:#888;font-size:.78rem;padding:20px}
+@media (prefers-color-scheme: dark){
+  body{background:#15161a;color:#e6e4dd}
+  main h2{border-color:#4a7aa8}
+  input,textarea,.comment,#tipsDrawer{background:#1e2026;color:#e6e4dd;border-color:#333}
+  .msg{background:#1e2026}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mr. Perfect Logistics &mdash; Staff Portal</h1>
+  <nav id="nav"></nav>
+</header>
+
+<main>
+  <section id="panel-home" class="panel active">
+    <h2>Welcome</h2>
+    <p>This is the internal staff portal for Mr. Perfect Logistics. Authorized personnel only.</p>
+    <p>Three security weaknesses are hidden somewhere in this site. Find all three flags. Your progress is tracked below.</p>
+    <div class="progress">
+      <span class="chip" id="chip1">Flag 1: SQL Injection</span>
+      <span class="chip" id="chip2">Flag 2: Stored XSS</span>
+      <span class="chip" id="chip3">Flag 3: IDOR</span>
+    </div>
+    <label>Submit a flag you found</label>
+    <input id="flagSubmit" placeholder="FLAG{...}">
+    <button class="primary" onclick="submitFlag()">Submit</button>
+    <div id="submitMsg"></div>
+  </section>
+
+  <section id="panel-login" class="panel">
+    <h2>Staff Login</h2>
+    <label>Username</label>
+    <input id="loginUser" placeholder="e.g. admin">
+    <label>Password</label>
+    <input id="loginPass" type="text" placeholder="password">
+    <button class="primary" onclick="tryLogin()">Sign in</button>
+    <div class="hint">Login is checked against: SELECT * FROM users WHERE username='…' AND password='…'</div>
+    <div id="loginMsg" class="msg" style="display:none"></div>
+  </section>
+
+  <section id="panel-guestbook" class="panel">
+    <h2>Guestbook</h2>
+    <p>Leave a public note for the team.</p>
+    <label>Your comment</label>
+    <textarea id="commentBox" placeholder="Write something..."></textarea>
+    <button class="primary" onclick="postComment()">Post comment</button>
+    <div id="comments"></div>
+  </section>
+
+  <section id="panel-directory" class="panel">
+    <h2>Staff Directory</h2>
+    <p>You are logged in as <b>guest (ID 1002)</b>.</p>
+    <ul class="directory">
+      <li><a href="#" onclick="viewProfile(1002);return false;">View my profile (ID 1002)</a></li>
+    </ul>
+    <div id="profileView"></div>
+  </section>
+</main>
+
+<button id="tipsBtn" onclick="toggleTips(true)">💡 Tips</button>
+<div id="tipsDrawer">
+  <button id="closeTips" onclick="toggleTips(false)">✕</button>
+  <h3>Hacker Tips</h3>
+  <details open>
+    <summary>Getting started</summary>
+    <p>Always check page source (Ctrl/Cmd+U) and browser DevTools console/network first. Try every input field with unexpected characters like <code>'</code> and <code>&lt;&gt;</code>.</p>
+  </details>
+  <details>
+    <summary>Flag 1 — SQL Injection</summary>
+    <p>The login form builds a query from your input. Classic bypass payloads end a string early and force the condition true, e.g. <code>' OR '1'='1</code> or comment out the rest with <code>admin'--</code>. Try them in the username field.</p>
+  </details>
+  <details>
+    <summary>Flag 2 — Stored XSS</summary>
+    <p>The guestbook filters <code>&lt;script&gt;</code> tags but may miss other ways to run JavaScript, like event handlers on an image tag, e.g. an <code>&lt;img&gt;</code> with a broken <code>src</code> and an <code>onerror</code> attribute.</p>
+  </details>
+  <details>
+    <summary>Flag 3 — IDOR</summary>
+    <p>Your profile loads by ID. What happens if you call <code>viewProfile()</code> with a different numeric ID than your own in the console? Admin accounts often have low IDs like 1000 or 1001.</p>
+  </details>
+</div>
+
+<footer>CHALLENGE BY MR PERFECT — Educational CTF sandbox. Nothing here touches a real server.</footer>
+
+<script>
+const tabs=[["home","Home"],["login","Login Portal"],["guestbook","Guestbook"],["directory","Staff Directory"]];
+const navEl=document.getElementById('nav');
+tabs.forEach(([id,label],i)=>{
+  const b=document.createElement('button');
+  b.textContent=label; b.className=i===0?'active':'';
+  b.onclick=()=>showPanel(id,b);
+  navEl.appendChild(b);
+});
+function showPanel(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  navEl.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+}
+function toggleTips(open){document.getElementById('tipsDrawer').classList.toggle('open',open);}
+
+const found={1:false,2:false,3:false};
+function markFound(n,flag){
+  if(!found[n]){found[n]=true;document.getElementById('chip'+n).classList.add('done');}
+  return flag;
+}
+function b64(s){return atob(s);}
+
+// ---- Vuln 1: simulated SQL injection in login ----
+function tryLogin(){
+  const u=document.getElementById('loginUser').value;
+  const p=document.getElementById('loginPass').value;
+  const query=`SELECT * FROM users WHERE username='${u}' AND password='${p}'`;
+  const box=document.getElementById('loginMsg');
+  box.style.display='block';
+
+  const tautology=/'\s*or\s*'?1'?\s*=\s*'?1/i.test(query) || /'\s*or\s*1\s*=\s*1/i.test(query);
+  const commentOut=/^admin'\s*--/i.test(u.trim());
+
+  if(tautology||commentOut){
+    const flag=markFound(1,b64('RkxBR3tzcWxfMW5qM2N0MTBuX2J5cDRzczNkfQ=='));
+    box.className='msg ok';
+    box.innerHTML='Query executed:<br><code>'+query.replace(/</g,'&lt;')+'</code><br><br>Authentication bypassed — logged in as <b>admin</b>.<br><span class="flagline">'+flag+'</span>';
+  }else{
+    box.className='msg err';
+    box.innerHTML='Query executed:<br><code>'+query.replace(/</g,'&lt;')+'</code><br><br>Login failed: no matching row.';
+  }
+}
+
+// ---- Vuln 2: stored XSS with an incomplete filter ----
+let comments=[{name:'HR Team',text:'Welcome to the team portal!'}];
+function weakSanitize(s){ return s.replace(/<script.*?>.*?<\/script>/gis,''); } // strips <script> only, nothing else
+function renderComments(){
+  const el=document.getElementById('comments');
+  el.innerHTML=comments.map(c=>`<div class="comment"><b>${c.name}:</b> ${c.text}</div>`).join('');
+}
+function postComment(){
+  const raw=document.getElementById('commentBox').value;
+  if(!raw.trim())return;
+  const cleaned=weakSanitize(raw);
+  comments.push({name:'Visitor',text:cleaned});
+  document.getElementById('commentBox').value='';
+  renderComments();
+}
+window.ctfXSSCallback=function(){
+  const flag=markFound(2,b64('RkxBR3tzdDByM2RfeHNzXzN4M2N1dDNkfQ=='));
+  const el=document.getElementById('comments');
+  const note=document.createElement('div');
+  note.className='msg ok'; note.innerHTML='Your script ran inside the page! <br><span class="flagline">'+flag+'</span>';
+  el.prepend(note);
+}
+renderComments();
+
+// ---- Vuln 3: IDOR via direct object reference ----
+const employees={
+  1000:{name:'Site Administrator',role:'Admin',notes:'Full system access. Password rotation overdue.',secret:b64('RkxBR3tpZDByX3ByaXZpbDNnM18zc2NhbDR0MTBufQ==')},
+  1001:{name:'Finance Manager',role:'Manager',notes:'Quarterly reports pending.'},
+  1002:{name:'Guest User',role:'Guest',notes:'Standard access only.'}
+};
+function viewProfile(id){
+  const rec=employees[id];
+  const el=document.getElementById('profileView');
+  if(!rec){el.innerHTML='<div class="msg err">No such employee ID.</div>';return;}
+  let body=`<div class="comment"><b>${rec.name}</b> — ${rec.role}<br>${rec.notes}</div>`;
+  if(rec.secret){
+    const flag=markFound(3,rec.secret);
+    body+=`<div class="msg ok">Access to a record you shouldn't see as guest.<br><span class="flagline">${flag}</span></div>`;
+  }
+  el.innerHTML=body;
+}
+viewProfile(1002);
+
+// ---- Flag submission tracker ----
+const validFlags=[b64('RkxBR3tzcWxfMW5qM2N0MTBuX2J5cDRzczNkfQ=='),b64('RkxBR3tzdDByM2RfeHNzXzN4M2N1dDNkfQ=='),b64('RkxBR3tpZDByX3ByaXZpbDNnM18zc2NhbDR0MTBufQ==')];
+function submitFlag(){
+  const val=document.getElementById('flagSubmit').value.trim();
+  const msg=document.getElementById('submitMsg');
+  if(validFlags.includes(val)){
+    msg.className='msg ok'; msg.textContent='Correct! That flag is valid.';
+    validFlags.splice(validFlags.indexOf(val),1);
+  }else{
+    msg.className='msg err'; msg.textContent='Not a recognized flag.';
+  }
+  msg.style.display='block';
+}
+</script>
+</body>
+</html>
